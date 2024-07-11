@@ -65,14 +65,13 @@ fn main() {
             last_playback_tick = playback_tick;
 
             let mut info = hl2
-                .read_mem::<PlayerInfoWeCareAbout>(client_dll.base_address() + EYEPOS_AND_ANG_OFFSET)
+                .read_mem::<PlayerInfoWeCareAbout>(
+                    client_dll.base_address() + EYEPOS_AND_ANG_OFFSET,
+                )
                 .unwrap();
             // this origin is actually eye-pos it seems...
             info.origin[2] -= 64.0;
 
-            // let flags = hl2.read_mem::<u32>(FLAGS_ADDRESS).unwrap();
-            let flags = 0;
-            let is_ducking = flags & 2 != 0;
             const IN_JUMP: u32 = 1 << 1;
             const IN_DUCK: u32 = 1 << 2;
             const FL_ONGROUND: u32 = 1 << 0;
@@ -81,11 +80,15 @@ fn main() {
             const MOVETYPE_WALK: u32 = 2;
             const MOVETYPE_NOCLIP: u32 = 8;
 
+            // let flags = hl2.read_mem::<u32>(FLAGS_ADDRESS).unwrap();
+            let flags = 0;
+            let is_ducking = flags & FL_DUCKING != 0;
+
             frames.push(Frame {
                 pos: info.origin,
                 ang: [info.angles[0], info.angles[1]],
                 buttons: IN_JUMP | if is_ducking { IN_DUCK } else { 0 },
-                flags: flags & (FL_DUCKING | FL_ONGROUND) | FL_CLIENT,
+                flags: FL_CLIENT | (flags & (FL_DUCKING | FL_ONGROUND)),
                 movetype: if flags & FL_ONGROUND != 0 {
                     MOVETYPE_WALK
                 } else {
